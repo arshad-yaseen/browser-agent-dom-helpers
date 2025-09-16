@@ -2,16 +2,13 @@ import { cleanHtml } from "./src/clean-html";
 
 const TARGET_URL = "https://withcortex.ai/";
 
-async function fetchAndCleanHtml() {
-	const response = await fetch(TARGET_URL);
-	const testHtml = await response.text();
+const response = await fetch(TARGET_URL);
 
-	const cleaned = await cleanHtml(testHtml);
+const orignalHtml = await response.text();
+const cleanedHtml = await cleanHtml(orignalHtml);
 
-	console.log("original html length:", testHtml.length);
-  console.log("cleaned html length:", cleaned.length);
+console.log("original html length:", orignalHtml.length);
+console.log("cleaned html length:", cleanedHtml.length);
 
-	await Bun.write("cleaned.html", cleaned);
-}
-
-fetchAndCleanHtml();
+await Bun.write("original.html", orignalHtml);
+await Bun.write("cleaned.html", cleanedHtml);
