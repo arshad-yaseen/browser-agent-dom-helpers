@@ -2,9 +2,13 @@
 	"name": "browser-agent-dom-helpers",
 	"description": "DOM helpers for the browser agent's LLM processing.",
 	"devDependencies": {
+		"@biomejs/biome": "2.2.4",
 		"@types/bun": "^1.2.22",
 		"@types/html-minifier-terser": "^7.0.2",
 		"typescript": "^5.9.2"
+	},
+	"scripts": {
+		"lint:fix": "biome check --write ."
 	},
 	"peerDependencies": {
 		"typescript": ">=4.5.0"

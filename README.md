@@ -5,7 +5,7 @@ DOM helpers for the browser agent's LLM processing.
 ## Clean HTML
 
 ```typescript
-import { cleanHtml } from './clean-html';
+import { cleanHtml } from './src/clean-html';
 
 const cleanedHtml = await cleanHtml(rawHtml);
 ```
