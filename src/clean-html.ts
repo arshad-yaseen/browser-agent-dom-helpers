@@ -37,22 +37,6 @@ export async function cleanHtml(html: string): Promise<string> {
 				}
 			},
 		})
-		.on("iframe", {
-			element(el) {
-				const src = el.getAttribute("src") || "no-src";
-				const id = el.getAttribute("id");
-				const className = el.getAttribute("class");
-				const name = el.getAttribute("name");
-				for (const [attrName] of el.attributes) {
-					el.removeAttribute(attrName);
-				}
-				if (id) el.setAttribute("id", id);
-				if (className) el.setAttribute("class", className);
-				if (name) el.setAttribute("name", name);
-				el.setAttribute("src", src);
-				el.setInnerContent(`[IFRAME: ${src}]`);
-			},
-		})
 		.on("*", {
 			element(el) {
 				const tagName = el.tagName;
