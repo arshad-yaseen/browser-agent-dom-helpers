@@ -11,6 +11,13 @@ const rewriter = new HTMLRewriter((outputChunk) => {
 });
 
 export async function cleanHtml(html: string): Promise<string> {
+
+  // hTMLRewriter cannot process elements inside iframe tags.
+  // as a fix, we convert all iframe tags to div elements with a special attribute.
+  // we use 'data-original-iframe' because essential data attributes are preserved during cleaning,
+  // allowing us to convert these divs back to iframes later.
+  html = html.replaceAll('<iframe', '<div data-original-iframe')
+
 	rewriter
 		.on(Array.from(REMOVE_COMPLETELY).join(","), {
 			element(el) {
@@ -40,49 +47,27 @@ export async function cleanHtml(html: string): Promise<string> {
 		.on("*", {
 			element(el) {
 				const tagName = el.tagName;
-				const isInteractive = INTERACTIVE_ELEMENTS.has(tagName);
-				const isStructural = STRUCTURAL_ELEMENTS.has(tagName);
+				const isContentContainerElement = CONTENT_CONTAINER_ELEMENTS.has(tagName);
 				let hasEventHandler = false;
 				const attributesToRemove: string[] = [];
+
 				for (const [name] of el.attributes) {
 					if (name.startsWith("on")) {
 						hasEventHandler = true;
 						el.setAttribute(name, "[handler]");
 						continue;
 					}
-					if (name.startsWith("data-")) {
-						if (
-							!name.match(
-								/^data-(testid|test|cy|qa|id|name|value|action|target)/,
-							)
-						) {
-							attributesToRemove.push(name);
-						}
-						continue;
-					}
-					if (name.startsWith("aria-")) {
-						continue;
-					}
+
 					if (!ESSENTIAL_ATTRIBUTES.has(name)) {
 						attributesToRemove.push(name);
 					}
 				}
+
 				for (const attr of attributesToRemove) {
 					el.removeAttribute(attr);
 				}
-				if (!isInteractive && !isStructural && !hasEventHandler) {
-					const keepTags = new Set([
-						"html",
-						"head",
-						"body",
-						"title",
-						"br",
-						"hr",
-						"wbr",
-					]);
-					if (!keepTags.has(tagName)) {
+				if (isContentContainerElement && !hasEventHandler) {
 						el.removeAndKeepContent();
-					}
 				}
 				if (tagName === "img") {
 					const alt = el.getAttribute("alt") || "image";
@@ -107,6 +92,10 @@ export async function cleanHtml(html: string): Promise<string> {
 		rewriter.free();
 	}
 
+	// convert the temporary div elements back to iframe tags
+	// this restores the iframes that were converted to divs at the beginning
+	cleanedHtml = cleanedHtml.replaceAll('<div data-original-iframe', '<iframe')
+
 	const minifiedHtml = await minify(cleanedHtml, {
 		collapseWhitespace: true,
 		removeComments: true,
@@ -122,48 +111,16 @@ export async function cleanHtml(html: string): Promise<string> {
 	return minifiedHtml;
 }
 
-// set of interactive elements that must be preserved
-const INTERACTIVE_ELEMENTS = new Set([
-	"a",
-	"button",
-	"input",
-	"textarea",
-	"select",
-	"option",
-	"optgroup",
-	"form",
-	"label",
-	"iframe",
-	"video",
-	"audio",
-	"details",
-	"summary",
-	"dialog",
-	"menu",
-	"menuitem",
-	"fieldset",
-	"legend",
-	"datalist",
-	"output",
-	"progress",
-	"meter",
-	"embed",
-	"object",
-	"param",
-	"track",
-	"map",
-	"area",
-]);
-
 // attributes essential for selection and understanding element purpose
 const ESSENTIAL_ATTRIBUTES = new Set([
 	"id",
 	"class",
 	"name",
 	"data-testid",
-	"data-test",
-	"data-cy",
-	"data-qa",
+
+	// special attribute used to track iframe elements that were temporarily converted to divs
+	// this marker allows us to convert them back to iframes after the cleaning process
+	"data-original-iframe",
 
 	"type",
 	"value",
@@ -208,77 +165,54 @@ const ESSENTIAL_ATTRIBUTES = new Set([
 	"aria-labelledby",
 	"aria-describedby",
 	"role",
-	"tabindex",
 	"contenteditable",
 	"draggable",
-	"spellcheck",
 ]);
 
 // elements to completely remove (not even keep their content)
 const REMOVE_COMPLETELY = new Set([
-	"style",
-	"script",
-	"noscript",
-	"meta",
-	"link",
-	"base",
-	"template",
+  "style",
+  "script",
+  "noscript",
+  "meta",
+  "link",
+  "base",
+  "template",
+  "head",
+  "title",
+  "col",
+  "colgroup",
+  "hr",
+  "br",
+  "wbr",
 ]);
 
-// elements that provide structure but aren't interactive
-const STRUCTURAL_ELEMENTS = new Set([
-	"div",
-	"span",
-	"section",
-	"article",
-	"main",
-	"header",
-	"footer",
-	"nav",
-	"aside",
-	"h1",
-	"h2",
-	"h3",
-	"h4",
-	"h5",
-	"h6",
-	"p",
-	"ul",
-	"ol",
-	"li",
-	"dl",
-	"dt",
-	"dd",
-	"table",
-	"thead",
-	"tbody",
-	"tfoot",
-	"tr",
-	"td",
-	"th",
-	"caption",
-	"col",
-	"colgroup",
-	"blockquote",
-	"pre",
-	"code",
-	"figure",
-	"figcaption",
-	"strong",
-	"em",
-	"b",
-	"i",
-	"u",
-	"s",
-	"small",
-	"mark",
-	"del",
-	"ins",
-	"sub",
-	"sup",
-	"q",
-	"cite",
-	"abbr",
-	"time",
-	"address",
+// elements that provide structure or style but are not interactive and don't need to be wrapped, but should keep their content
+const CONTENT_CONTAINER_ELEMENTS = new Set([
+  "strong",
+  "em",
+  "b",
+  "i",
+  "u",
+  "s",
+  "small",
+  "mark",
+  "del",
+  "ins",
+  "sub",
+  "sup",
+  "q",
+  "cite",
+  "abbr",
+  "time",
+  "code",
+  "kbd",
+  "samp",
+  "var",
+  "dfn",
+  "bdi",
+  "bdo",
+  "ruby",
+  "rt",
+  "rp",
 ]);
