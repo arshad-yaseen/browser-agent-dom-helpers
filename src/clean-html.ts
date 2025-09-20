@@ -11,12 +11,11 @@ const rewriter = new HTMLRewriter((outputChunk) => {
 });
 
 export async function cleanHtml(html: string): Promise<string> {
-
-  // hTMLRewriter cannot process elements inside iframe tags.
-  // as a fix, we convert all iframe tags to div elements with a special attribute.
-  // we use 'data-original-iframe' because essential data attributes are preserved during cleaning,
-  // allowing us to convert these divs back to iframes later.
-  html = html.replaceAll('<iframe', '<div data-original-iframe')
+	// hTMLRewriter cannot process elements inside iframe tags.
+	// as a fix, we convert all iframe tags to div elements with a special attribute.
+	// we use 'data-original-iframe' because essential data attributes are preserved during cleaning,
+	// allowing us to convert these divs back to iframes later.
+	html = html.replaceAll("<iframe", "<div data-original-iframe");
 
 	rewriter
 		.on(Array.from(REMOVE_COMPLETELY).join(","), {
@@ -47,7 +46,8 @@ export async function cleanHtml(html: string): Promise<string> {
 		.on("*", {
 			element(el) {
 				const tagName = el.tagName;
-				const isContentContainerElement = CONTENT_CONTAINER_ELEMENTS.has(tagName);
+				const isContentContainerElement =
+					CONTENT_CONTAINER_ELEMENTS.has(tagName);
 				let hasEventHandler = false;
 				const attributesToRemove: string[] = [];
 
@@ -67,7 +67,7 @@ export async function cleanHtml(html: string): Promise<string> {
 					el.removeAttribute(attr);
 				}
 				if (isContentContainerElement && !hasEventHandler) {
-						el.removeAndKeepContent();
+					el.removeAndKeepContent();
 				}
 				if (tagName === "img") {
 					const alt = el.getAttribute("alt") || "image";
@@ -94,7 +94,7 @@ export async function cleanHtml(html: string): Promise<string> {
 
 	// convert the temporary div elements back to iframe tags
 	// this restores the iframes that were converted to divs at the beginning
-	cleanedHtml = cleanedHtml.replaceAll('<div data-original-iframe', '<iframe')
+	cleanedHtml = cleanedHtml.replaceAll("<div data-original-iframe", "<iframe");
 
 	const minifiedHtml = await minify(cleanedHtml, {
 		collapseWhitespace: true,
@@ -171,48 +171,49 @@ const ESSENTIAL_ATTRIBUTES = new Set([
 
 // elements to completely remove (not even keep their content)
 const REMOVE_COMPLETELY = new Set([
-  "style",
-  "script",
-  "noscript",
-  "meta",
-  "link",
-  "base",
-  "template",
-  "head",
-  "title",
-  "col",
-  "colgroup",
-  "hr",
-  "br",
-  "wbr",
+	"style",
+	"script",
+	"noscript",
+	"meta",
+	"link",
+	"base",
+	"template",
+	"head",
+	"title",
+	"col",
+	"colgroup",
+	"hr",
+	"br",
+	"wbr",
 ]);
 
 // elements that provide structure or style but are not interactive and don't need to be wrapped, but should keep their content
 const CONTENT_CONTAINER_ELEMENTS = new Set([
-  "strong",
-  "em",
-  "b",
-  "i",
-  "u",
-  "s",
-  "small",
-  "mark",
-  "del",
-  "ins",
-  "sub",
-  "sup",
-  "q",
-  "cite",
-  "abbr",
-  "time",
-  "code",
-  "kbd",
-  "samp",
-  "var",
-  "dfn",
-  "bdi",
-  "bdo",
-  "ruby",
-  "rt",
-  "rp",
+	"div",
+	"strong",
+	"em",
+	"b",
+	"i",
+	"u",
+	"s",
+	"small",
+	"mark",
+	"del",
+	"ins",
+	"sub",
+	"sup",
+	"q",
+	"cite",
+	"abbr",
+	"time",
+	"code",
+	"kbd",
+	"samp",
+	"var",
+	"dfn",
+	"bdi",
+	"bdo",
+	"ruby",
+	"rt",
+	"rp",
 ]);
