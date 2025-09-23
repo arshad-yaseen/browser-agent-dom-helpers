@@ -12,10 +12,10 @@ const rewriter = new HTMLRewriter((outputChunk) => {
 
 export async function cleanHtml(html: string): Promise<string> {
 	// hTMLRewriter cannot process elements inside iframe tags.
-	// as a fix, we convert all iframe tags to div elements with a special attribute.
+	// as a fix, we convert all iframe tags to span elements with a special attribute.
 	// we use 'data-original-iframe' because essential data attributes are preserved during cleaning,
-	// allowing us to convert these divs back to iframes later.
-	html = html.replaceAll("<iframe", "<div data-original-iframe");
+	// allowing us to convert these spans back to iframes later.
+	html = html.replaceAll("<iframe", "<span data-original-iframe");
 
 	rewriter
 		.on(Array.from(REMOVE_COMPLETELY).join(","), {
@@ -92,9 +92,9 @@ export async function cleanHtml(html: string): Promise<string> {
 		rewriter.free();
 	}
 
-	// convert the temporary div elements back to iframe tags
-	// this restores the iframes that were converted to divs at the beginning
-	cleanedHtml = cleanedHtml.replaceAll("<div data-original-iframe", "<iframe");
+	// convert the temporary span elements back to iframe tags
+	// this restores the iframes that were converted to spans at the beginning
+	cleanedHtml = cleanedHtml.replaceAll("<span data-original-iframe", "<iframe");
 
 	const minifiedHtml = await minify(cleanedHtml, {
 		collapseWhitespace: true,
